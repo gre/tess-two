@@ -5,7 +5,6 @@ proguard.cfg
 proguard-project.txt
 bin/
 gen/
-libs/
 obj/
 patches/
 target/
