@@ -14,9 +14,9 @@
  * the License.
  */
 
-package com.googlecode.tesseract.android;
+package com.googlecode.tesseract;
 
-import com.googlecode.tesseract.android.TessBaseAPI.PageIteratorLevel;
+import com.googlecode.tesseract.TessBaseAPI.PageIteratorLevel;
 
 public class PageIterator {
     static {
@@ -62,7 +62,7 @@ public class PageIterator {
 
     /**
      * Get bounding box: x, y, w, h
-     * 
+     *
      * ============= Accessing data ==============.
      * Coordinate system:
      * Integer coordinates are at the cracks between the pixels.
@@ -79,14 +79,14 @@ public class PageIterator {
      * Returns the bounding rectangle of the current object at the given level.
      * See comment on coordinate system above.
      * The returned bounding box may clip foreground pixels from a grey image.
-     * 
+     *
      * @param level the page iterator level. See {@link PageIteratorLevel}.
      * @return the bounding rectangle of the current object at the given level
      */
     public int[] getBoundingBox(int level){
     	return nativeBoundingBox(mNativePageIterator, level);
     }
-    
+
     private static native void nativeBegin(long nativeIterator);
     private static native boolean nativeNext(long nativeIterator, int level);
     private static native int[] nativeBoundingBox(long nativeIterator, int level);

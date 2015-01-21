@@ -14,15 +14,12 @@
  * the License.
  */
 
-package com.googlecode.tesseract.android;
+package com.googlecode.tesseract;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import android.util.Log;
-import android.util.Pair;
-
-import com.googlecode.tesseract.android.TessBaseAPI.PageIteratorLevel;
+import com.googlecode.tesseract.TessBaseAPI.PageIteratorLevel;
 
 /**
  * Java interface for the ResultIterator. Does not implement all available JNI
@@ -68,16 +65,17 @@ public class ResultIterator extends PageIterator {
     }
 
     /**
-     * Returns all possible matching text strings and their confidence level 
+     * Returns all possible matching text strings and their confidence level
      * for the current object at the given level.
      * <p>
-     * The default matching text is blank (""). 
-     * The default confidence level is zero (0.0) 
+     * The default matching text is blank ("").
+     * The default confidence level is zero (0.0)
      *
      * @param level the page iterator level. See {@link PageIteratorLevel}.
      * @return A list of pairs with the UTF string and the confidence
+     * @throws NumberFormatException If some confidence level is not a valid double
      */
-    public List<Pair<String, Double>> getChoicesAndConfidence(int level) {
+    public List<Pair<String, Double>> getChoicesAndConfidence(int level) throws NumberFormatException {
         // Get the native choices
         String[] nativeChoices = nativeGetChoices(mNativeResultIterator, level);
 
@@ -92,14 +90,9 @@ public class ResultIterator extends PageIterator {
             String utfString = "";
             Double confidenceLevel = Double.valueOf(0);
             if (separatorPosition > 0) {
-
                 // If the string contains a '|' separate the UTF string and the confidence level
                 utfString = nativeChoices[i].substring(0, separatorPosition);
-                try {
-                    confidenceLevel = Double.parseDouble(nativeChoices[i].substring(separatorPosition + 1));
-                } catch (NumberFormatException e) {
-                    Log.e("ResultIterator","Invalid confidence level for " + nativeChoices[i]);
-                }
+                confidenceLevel = Double.parseDouble(nativeChoices[i].substring(separatorPosition + 1));
             } else {
                 // If the string contains no '|' then save the full native result as the utfString
                 utfString = nativeChoices[i];
