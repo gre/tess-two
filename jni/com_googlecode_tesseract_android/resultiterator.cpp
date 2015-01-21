@@ -15,7 +15,7 @@
  */
 
 #include <stdio.h>
-#include "common.h"
+#include <jni.h>
 #include "resultiterator.h"
 #include "allheaders.h"
 #include "pageres.h"
@@ -27,7 +27,7 @@ using namespace tesseract;
 extern "C" {
 #endif  /* __cplusplus */
 
-jstring Java_com_googlecode_tesseract_android_ResultIterator_nativeGetUTF8Text(JNIEnv *env,
+jstring Java_com_googlecode_tesseract_ResultIterator_nativeGetUTF8Text(JNIEnv *env,
     jclass clazz, jlong nativeResultIterator, jint level) {
   ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
   PageIteratorLevel enumLevel = (PageIteratorLevel) level;
@@ -40,7 +40,7 @@ jstring Java_com_googlecode_tesseract_android_ResultIterator_nativeGetUTF8Text(J
   return result;
 }
 
-jfloat Java_com_googlecode_tesseract_android_ResultIterator_nativeConfidence(JNIEnv *env,
+jfloat Java_com_googlecode_tesseract_ResultIterator_nativeConfidence(JNIEnv *env,
     jclass clazz, jlong nativeResultIterator, jint level) {
   ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
   PageIteratorLevel enumLevel = (PageIteratorLevel) level;
@@ -48,7 +48,7 @@ jfloat Java_com_googlecode_tesseract_android_ResultIterator_nativeConfidence(JNI
   return (jfloat) resultIterator->Confidence(enumLevel);
 }
 
-jobjectArray Java_com_googlecode_tesseract_android_ResultIterator_nativeGetChoices(JNIEnv *env,
+jobjectArray Java_com_googlecode_tesseract_ResultIterator_nativeGetChoices(JNIEnv *env,
     jobject thiz, jint nativeResultIterator, jint level) {
 
   // Get the actual result iterator and level (as C objects)

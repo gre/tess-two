@@ -25,22 +25,12 @@ LOCAL_LDLIBS := \
 
 # jni
 
-LOCAL_SRC_FILES += \
-  box.cpp \
-  pix.cpp \
-  pixa.cpp \
-  utilities.cpp \
-  readfile.cpp \
-  writefile.cpp \
-  jni.cpp
-  
 LOCAL_C_INCLUDES += \
   $(LOCAL_PATH) \
   $(LEPTONICA_PATH)/src
 
 LOCAL_LDLIBS += \
-  -ljnigraphics \
-  -llog
+  -ljnigraphics
 
 # common
 

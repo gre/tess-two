@@ -68,8 +68,7 @@ LOCAL_C_INCLUDES += \
   $(LOCAL_PATH)
 
 LOCAL_LDLIBS += \
-  -ljnigraphics \
-  -llog
+  -ljnigraphics
 
 # common
 

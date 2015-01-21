@@ -17,7 +17,7 @@
 
 #include <stdio.h>
 #include <malloc.h>
-#include "common.h"
+#include <jni.h>
 #include "baseapi.h"
 #include "ocrclass.h"
 #include "allheaders.h"
@@ -27,7 +27,6 @@ static jmethodID method_onProgressValues;
 
 struct native_data_t {
   tesseract::TessBaseAPI api;
-  PIX *pix;
   void *data;
   bool debug;
 
@@ -41,7 +40,6 @@ struct native_data_t {
     if (cancel_ocr == false && cachedEnv != NULL && cachedObject != NULL) {
       return true;
     } else {
-      LOGI("state is cancelled");
       return false;
     }
   }
@@ -62,7 +60,6 @@ struct native_data_t {
 
   native_data_t() {
     lastProgress = 0;
-    pix = NULL;
     data = NULL;
     debug = false;
     cachedEnv = NULL;
@@ -108,34 +105,32 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
   JNIEnv *env;
 
   if (vm->GetEnv((void**) &env, JNI_VERSION_1_6) != JNI_OK) {
-    LOGE("Failed to get the environment using GetEnv()");
     return -1;
   }
 
   return JNI_VERSION_1_6;
 }
 
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeClassInit(JNIEnv* env,
+void Java_com_googlecode_tesseract_TessBaseAPI_nativeClassInit(JNIEnv* env,
                                                                        jclass clazz) {
 
   field_mNativeData = env->GetFieldID(clazz, "mNativeData", "J");
   method_onProgressValues = env->GetMethodID(clazz, "onProgressValues", "(IIIII)V");
 }
 
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeConstruct(JNIEnv* env,
+void Java_com_googlecode_tesseract_TessBaseAPI_nativeConstruct(JNIEnv* env,
                                                                        jobject object) {
 
   native_data_t *nat = new native_data_t;
 
   if (nat == NULL) {
-    LOGE("%s: out of memory!", __FUNCTION__);
     return;
   }
 
   env->SetLongField(object, field_mNativeData, (jlong) nat);
 }
 
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeFinalize(JNIEnv* env,
+void Java_com_googlecode_tesseract_TessBaseAPI_nativeFinalize(JNIEnv* env,
                                                                       jobject object) {
 
   native_data_t *nat = get_native_data(env, object);
@@ -145,16 +140,13 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeFinalize(JNIEnv* en
   // attempt to set a new image using one of the nativeSet* methods.
   if (nat->data != NULL)
     free(nat->data);
-  else if (nat->pix != NULL)
-    pixDestroy(&nat->pix);
   nat->data = NULL;
-  nat->pix = NULL;
 
   if (nat != NULL)
     delete nat;
 }
 
-jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeInit(JNIEnv *env,
+jboolean Java_com_googlecode_tesseract_TessBaseAPI_nativeInit(JNIEnv *env,
                                                                       jobject thiz,
                                                                       jstring dir,
                                                                       jstring lang) {
@@ -167,10 +159,8 @@ jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeInit(JNIEnv *en
   jboolean res = JNI_TRUE;
 
   if (nat->api.Init(c_dir, c_lang)) {
-    LOGE("Could not initialize Tesseract API with language=%s!", c_lang);
     res = JNI_FALSE;
   } else {
-    LOGI("Initialized Tesseract API with language=%s", c_lang);
   }
 
   env->ReleaseStringUTFChars(dir, c_dir);
@@ -179,7 +169,7 @@ jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeInit(JNIEnv *en
   return res;
 }
 
-jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeInitOem(JNIEnv *env,
+jboolean Java_com_googlecode_tesseract_TessBaseAPI_nativeInitOem(JNIEnv *env,
                                                                          jobject thiz,
                                                                          jstring dir,
                                                                          jstring lang,
@@ -193,10 +183,8 @@ jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeInitOem(JNIEnv 
   jboolean res = JNI_TRUE;
 
   if (nat->api.Init(c_dir, c_lang, (tesseract::OcrEngineMode) mode)) {
-    LOGE("Could not initialize Tesseract API with language=%s!", c_lang);
     res = JNI_FALSE;
   } else {
-    LOGI("Initialized Tesseract API with language=%s", c_lang);
   }
 
   env->ReleaseStringUTFChars(dir, c_dir);
@@ -205,7 +193,7 @@ jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeInitOem(JNIEnv 
   return res;
 }
 
-jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetInitLanguagesAsString(JNIEnv *env,
+jstring Java_com_googlecode_tesseract_TessBaseAPI_nativeGetInitLanguagesAsString(JNIEnv *env,
                                                                                          jobject thiz) {
 
   native_data_t *nat = get_native_data(env, thiz);
@@ -218,7 +206,7 @@ jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetInitLanguages
 }
 
 
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetImageBytes(JNIEnv *env,
+void Java_com_googlecode_tesseract_TessBaseAPI_nativeSetImageBytes(JNIEnv *env,
                                                                            jobject thiz,
                                                                            jbyteArray data,
                                                                            jint width,
@@ -246,34 +234,10 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetImageBytes(JNIEn
   // attempt to set a new image using one of the nativeSet* methods.
   if (nat->data != NULL)
     free(nat->data);
-  else if (nat->pix != NULL)
-    pixDestroy(&nat->pix);
   nat->data = imagedata;
-  nat->pix = NULL;
 }
 
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetImagePix(JNIEnv *env,
-                                                                         jobject thiz,
-                                                                         jlong nativePix) {
-
-  PIX *pixs = (PIX *) nativePix;
-  PIX *pixd = pixClone(pixs);
-
-  native_data_t *nat = get_native_data(env, thiz);
-  nat->api.SetImage(pixd);
-
-  // Since Tesseract doesn't take ownership of the memory, we keep a pointer in the native
-  // code struct. We need to free that pointer when we release our instance of Tesseract or
-  // attempt to set a new image using one of the nativeSet* methods.
-  if (nat->data != NULL)
-    free(nat->data);
-  else if (nat->pix != NULL)
-    pixDestroy(&nat->pix);
-  nat->data = NULL;
-  nat->pix = pixd;
-}
-
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetRectangle(JNIEnv *env,
+void Java_com_googlecode_tesseract_TessBaseAPI_nativeSetRectangle(JNIEnv *env,
                                                                           jobject thiz,
                                                                           jint left,
                                                                           jint top,
@@ -285,7 +249,7 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetRectangle(JNIEnv
   nat->api.SetRectangle(left, top, width, height);
 }
 
-jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetUTF8Text(JNIEnv *env,
+jstring Java_com_googlecode_tesseract_TessBaseAPI_nativeGetUTF8Text(JNIEnv *env,
                                                                             jobject thiz) {
 
   native_data_t *nat = get_native_data(env, thiz);
@@ -307,7 +271,7 @@ jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetUTF8Text(JNIE
   return result;
 }
 
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeStop(JNIEnv *env,
+void Java_com_googlecode_tesseract_TessBaseAPI_nativeStop(JNIEnv *env,
                                                                   jobject thiz) {
 
   native_data_t *nat = get_native_data(env, thiz);
@@ -317,7 +281,7 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeStop(JNIEnv *env,
   nat->cancel_ocr = true;
 }
 
-jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeMeanConfidence(JNIEnv *env,
+jint Java_com_googlecode_tesseract_TessBaseAPI_nativeMeanConfidence(JNIEnv *env,
                                                                             jobject thiz) {
 
   native_data_t *nat = get_native_data(env, thiz);
@@ -325,7 +289,7 @@ jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeMeanConfidence(JNIE
   return (jint) nat->api.MeanTextConf();
 }
 
-jintArray Java_com_googlecode_tesseract_android_TessBaseAPI_nativeWordConfidences(JNIEnv *env,
+jintArray Java_com_googlecode_tesseract_TessBaseAPI_nativeWordConfidences(JNIEnv *env,
                                                                                   jobject thiz) {
 
   native_data_t *nat = get_native_data(env, thiz);
@@ -333,7 +297,6 @@ jintArray Java_com_googlecode_tesseract_android_TessBaseAPI_nativeWordConfidence
   int *confs = nat->api.AllWordConfidences();
 
   if (confs == NULL) {
-    LOGE("Could not get word-confidence values!");
     return NULL;
   }
 
@@ -341,11 +304,9 @@ jintArray Java_com_googlecode_tesseract_android_TessBaseAPI_nativeWordConfidence
   for (len = 0, trav = confs; *trav != -1; trav++, len++)
     ;
 
-  LOG_ASSERT((confs != NULL), "Confidence array has %d elements", len);
 
   jintArray ret = env->NewIntArray(len);
 
-  LOG_ASSERT((ret != NULL), "Could not create Java confidence array!");
 
   env->SetIntArrayRegion(ret, 0, len, confs);
 
@@ -354,7 +315,7 @@ jintArray Java_com_googlecode_tesseract_android_TessBaseAPI_nativeWordConfidence
   return ret;
 }
 
-jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetVariable(JNIEnv *env,
+jboolean Java_com_googlecode_tesseract_TessBaseAPI_nativeSetVariable(JNIEnv *env,
                                                                              jobject thiz,
                                                                              jstring var,
                                                                              jstring value) {
@@ -372,7 +333,7 @@ jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetVariable(JNI
   return set;
 }
 
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeClear(JNIEnv *env,
+void Java_com_googlecode_tesseract_TessBaseAPI_nativeClear(JNIEnv *env,
                                                                    jobject thiz) {
 
   native_data_t *nat = get_native_data(env, thiz);
@@ -387,13 +348,10 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeClear(JNIEnv *env,
   // attempt to set a new image using one of the nativeSet* methods.
   if (nat->data != NULL)
     free(nat->data);
-  else if (nat->pix != NULL)
-    pixDestroy(&nat->pix);
   nat->data = NULL;
-  nat->pix = NULL;
 }
 
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeEnd(JNIEnv *env,
+void Java_com_googlecode_tesseract_TessBaseAPI_nativeEnd(JNIEnv *env,
                                                                  jobject thiz) {
 
   native_data_t *nat = get_native_data(env, thiz);
@@ -405,13 +363,10 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeEnd(JNIEnv *env,
   // attempt to set a new image using one of the nativeSet* methods.
   if (nat->data != NULL)
     free(nat->data);
-  else if (nat->pix != NULL)
-    pixDestroy(&nat->pix);
   nat->data = NULL;
-  nat->pix = NULL;
 }
 
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetDebug(JNIEnv *env,
+void Java_com_googlecode_tesseract_TessBaseAPI_nativeSetDebug(JNIEnv *env,
                                                                       jobject thiz,
                                                                       jboolean debug) {
 
@@ -420,7 +375,7 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetDebug(JNIEnv *en
   nat->debug = (debug == JNI_TRUE) ? TRUE : FALSE;
 }
 
-jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetPageSegMode(JNIEnv *env,
+jint Java_com_googlecode_tesseract_TessBaseAPI_nativeGetPageSegMode(JNIEnv *env,
                                                                             jobject thiz) {
 
   native_data_t *nat = get_native_data(env, thiz);
@@ -428,7 +383,7 @@ jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetPageSegMode(JNIE
   return nat->api.GetPageSegMode();
 }
 
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetPageSegMode(JNIEnv *env,
+void Java_com_googlecode_tesseract_TessBaseAPI_nativeSetPageSegMode(JNIEnv *env,
                                                                             jobject thiz,
                                                                             jint mode) {
 
@@ -437,93 +392,14 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetPageSegMode(JNIE
   nat->api.SetPageSegMode((tesseract::PageSegMode) mode);
 }
 
-jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetThresholdedImage(JNIEnv *env,
-                                                                                  jobject thiz) {
-
-  native_data_t *nat = get_native_data(env, thiz);
-
-  PIX *pix = nat->api.GetThresholdedImage();
-
-  return (jlong) pix;
-}
-
-jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetRegions(JNIEnv *env,
-                                                                         jobject thiz) {
-
-  native_data_t *nat = get_native_data(env, thiz);
-  PIXA *pixa = NULL;
-  BOXA *boxa;
-
-  boxa = nat->api.GetRegions(&pixa);
-
-  boxaDestroy(&boxa);
-
-  return reinterpret_cast<jlong>(pixa);
-}
-
-jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetTextlines(JNIEnv *env,
-                                                                           jobject thiz) {
-
-  native_data_t *nat = get_native_data(env, thiz);
-  PIXA *pixa = NULL;
-  BOXA *boxa;
-
-  boxa = nat->api.GetTextlines(&pixa, NULL);
-
-  boxaDestroy(&boxa);
-
-  return reinterpret_cast<jlong>(pixa);
-}
-
-jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetStrips(JNIEnv *env,
-                                                                        jobject thiz) {
-
-  native_data_t *nat = get_native_data(env, thiz);
-  PIXA *pixa = NULL;
-  BOXA *boxa;
-
-  boxa = nat->api.GetStrips(&pixa, NULL);
-
-  boxaDestroy(&boxa);
-
-  return reinterpret_cast<jlong>(pixa);
-}
-
-jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetWords(JNIEnv *env,
-                                                                       jobject thiz) {
-
-  native_data_t *nat = get_native_data(env, thiz);
-  PIXA *pixa = NULL;
-  BOXA *boxa;
-
-  boxa = nat->api.GetWords(&pixa);
-
-  boxaDestroy(&boxa);
-
-  return reinterpret_cast<jlong>(pixa);
-}
-
-jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetConnectedComponents(JNIEnv *env,
-                                                                                    jobject thiz) {
-
-  native_data_t *nat = get_native_data(env, thiz);
-  PIXA *pixa = NULL;
-  BOXA *boxa;
-
-  boxa = nat->api.GetConnectedComponents(&pixa);
-  boxaDestroy(&boxa);
-
-  return reinterpret_cast<jlong>(pixa);
-}
-
-jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetResultIterator(JNIEnv *env,
+jlong Java_com_googlecode_tesseract_TessBaseAPI_nativeGetResultIterator(JNIEnv *env,
                                                                                 jobject thiz) {
   native_data_t *nat = get_native_data(env, thiz);
 
   return (jlong) nat->api.GetIterator();
 }
 
-jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetHOCRText(JNIEnv *env,
+jstring Java_com_googlecode_tesseract_TessBaseAPI_nativeGetHOCRText(JNIEnv *env,
                                                                             jobject thiz, jint page) {
 
   native_data_t *nat = get_native_data(env, thiz);
@@ -545,7 +421,7 @@ jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetHOCRText(JNIE
   return result;
 }
 
-jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetBoxText(JNIEnv *env,
+jstring Java_com_googlecode_tesseract_TessBaseAPI_nativeGetBoxText(JNIEnv *env,
                                                                            jobject thiz, jint page) {
 
   native_data_t *nat = get_native_data(env, thiz);
@@ -559,7 +435,7 @@ jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetBoxText(JNIEn
   return result;
 }
 
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetInputName(JNIEnv *env,
+void Java_com_googlecode_tesseract_TessBaseAPI_nativeSetInputName(JNIEnv *env,
                                                                           jobject thiz,
                                                                           jstring name) {
   native_data_t *nat = get_native_data(env, thiz);
@@ -568,7 +444,7 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetInputName(JNIEnv
   env->ReleaseStringUTFChars(name, c_name);
 }
 
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetOutputName(JNIEnv *env,
+void Java_com_googlecode_tesseract_TessBaseAPI_nativeSetOutputName(JNIEnv *env,
                                                                            jobject thiz,
                                                                            jstring name) {
   native_data_t *nat = get_native_data(env, thiz);
@@ -577,7 +453,7 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetOutputName(JNIEn
   env->ReleaseStringUTFChars(name, c_name);
 }
 
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeReadConfigFile(JNIEnv *env,
+void Java_com_googlecode_tesseract_TessBaseAPI_nativeReadConfigFile(JNIEnv *env,
                                                                             jobject thiz,
                                                                             jstring fileName) {
   native_data_t *nat = get_native_data(env, thiz);
