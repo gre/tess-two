@@ -1,11 +1,2 @@
-.settings
-.svn
-local.properties
-proguard.cfg
-proguard-project.txt
-bin/
-gen/
-obj/
-patches/
-target/
-src/test/resources/META-INF/config.properties
+/obj
+/gen
