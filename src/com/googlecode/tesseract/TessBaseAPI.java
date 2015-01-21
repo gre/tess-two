@@ -213,7 +213,12 @@ public class TessBaseAPI {
         // TODO Find out why finalize() is getting called when we change languages, even though
         // we're still using the object. Is bypassing nativeFinalize() OK if we still call
         // baseApi.end() in the Activity's onDestroy()?
-        super.finalize();
+
+        try {
+            //nativeFinalize();
+        } finally {
+            super.finalize();
+        }
     }
 
     /**
